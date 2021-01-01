@@ -175,7 +175,7 @@ class BackgroundService : Service() {
     fun updateNotification() {
 
         // Create it
-        val notification = Notification.Builder(this, "service").setSmallIcon(R.mipmap.ic_launcher)
+        val notification = Notification.Builder(this, "service").setSmallIcon(R.drawable.ic_service_notification)
 
         // Set contents based on state
         var title = ""
@@ -236,6 +236,11 @@ class BackgroundService : Service() {
         shutdownIntent.putExtra("service-action", "shutdown")
         val shutdownPending = PendingIntent.getService(this, 0, shutdownIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         notification.addAction(Notification.Action.Builder(null, getText(R.string.notification_action_shutdown).toString(), shutdownPending).build())
+
+        // Add click button
+        val activityIntent = Intent(this, MainActivity::class.java)
+        val activityPending = PendingIntent.getActivity(this, 0, activityIntent, 0)
+        notification.setContentIntent(activityPending)
 
         // Show it
         startForeground(1, notification.build())

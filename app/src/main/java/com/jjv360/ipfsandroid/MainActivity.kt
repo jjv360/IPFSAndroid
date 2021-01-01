@@ -1,5 +1,6 @@
 package com.jjv360.ipfsandroid
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -11,10 +12,15 @@ class MainActivity : AppCompatActivity() {
 
     // Called on activity create
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         // Load UI
-        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+    }
+
+    override fun onResume() {
+        super.onResume()
 
         // Start the service
         BackgroundService.start(this)
