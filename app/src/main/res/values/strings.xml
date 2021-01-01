@@ -15,4 +15,9 @@
     <string name="notification_unused_title">Closing soon • %total_speed</string>
     <string name="notification_unused_text">The IPFS node has not been used for a while, and will shut down soon.</string>
 
+    <!-- Text for the dialog UI -->
+    <string name="favorites">Favorites</string>
+    <string name="no_favorites">No favorites added.</string>
+    <string name="tools">Tools</string>
+
 </resources>
