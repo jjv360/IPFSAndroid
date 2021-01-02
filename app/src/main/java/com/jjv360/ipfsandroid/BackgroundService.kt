@@ -17,7 +17,10 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.task
 import nl.komponents.kovenant.ui.promiseOnUi
 import nl.komponents.kovenant.ui.successUi
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.Integer.max
+import java.nio.charset.Charset
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.math.log10
@@ -29,7 +32,7 @@ class BackgroundService : Service() {
     companion object {
 
         // Shut down after this amount of inactivity
-        val shutdownAfterMS = 15 * 60 * 1000
+        val shutdownAfterMS = 5 * 60 * 1000
 
         // Sticky service notification ID
         private const val NotificationID = 1
@@ -70,12 +73,16 @@ class BackgroundService : Service() {
     // Date of last activity
     var lastActivity = System.currentTimeMillis()
 
+    // Date started
+    var dateStarted = System.currentTimeMillis()
+
     // Running IPFS process
     var ipfsProcess : Process? = null
     var ipfsProcessReady = false
     var ipfsDownSpeed : Long = 0
     var ipfsUpSpeed : Long = 0
     var ipfsTotalTransferred : Long = 0
+    var ipfsNumConnections = 0
 
     // Status check timer
     var ipfsCheckTimer : Timer? = null
@@ -96,6 +103,8 @@ class BackgroundService : Service() {
 
     // Called when someone starts the service
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        // Someone wants to interact with the service, set our latest activity date
         lastActivity = System.currentTimeMillis()
 
         // Special: Our "Shutdown" button on the notification sends a start intent to our service
@@ -198,7 +207,7 @@ class BackgroundService : Service() {
             title = getText(R.string.notification_running_title).toString()
             text = getText(R.string.notification_running_text).toString()
 
-        } else if (System.currentTimeMillis() > lastActivity + shutdownAfterMS - 180000 && !isPluggedIn) {
+        } else if (System.currentTimeMillis() > lastActivity + shutdownAfterMS - 120000 && !isPluggedIn) {
 
             // Will shut down in a few minutes
             title = getText(R.string.notification_unused_title).toString()
@@ -217,10 +226,12 @@ class BackgroundService : Service() {
         title = title.replace("%up_speed", readableFileSize(ipfsUpSpeed) + "/s")
         title = title.replace("%total_transferred", readableFileSize(ipfsTotalTransferred))
         title = title.replace("%total_speed", readableFileSize(ipfsDownSpeed + ipfsUpSpeed) + "/s")
+        title = title.replace("%connections", "$ipfsNumConnections")
         text = text.replace("%down_speed", readableFileSize(ipfsDownSpeed) + "/s")
         text = text.replace("%up_speed", readableFileSize(ipfsUpSpeed) + "/s")
         text = text.replace("%total_transferred", readableFileSize(ipfsTotalTransferred))
         text = text.replace("%total_speed", readableFileSize(ipfsDownSpeed + ipfsUpSpeed) + "/s")
+        text = text.replace("%connections", "$ipfsNumConnections")
 
         // Apply text
         notification.setContentTitle(title)
@@ -285,6 +296,7 @@ class BackgroundService : Service() {
 
         // Create pattern matcher
         val readyMatcher = StreamSearcher("Daemon is ready")
+        val getBlockMatcher = StreamSearcher("BlockService GetBlock:")
 
         // Pipe output to our process's output
         task {
@@ -295,12 +307,22 @@ class BackgroundService : Service() {
                 System.out.write(buffer, 0, amt)
 
                 // Check if ready
-                if (readyMatcher.add(buffer, 0, amt)) {
+                if (!ipfsProcessReady && readyMatcher.add(buffer, 0, amt)) {
 
                     // Daemon is ready!
                     ipfsProcessReady = true
                     promiseOnUi {
                         updateNotification()
+                    }
+
+                    // Send command to start watching the logs
+                    task {
+
+                        // Monitor blockservice
+                        val exitcode = Runtime.getRuntime().exec(listOf(ipfsBinary.absolutePath, "log", "level", "blockservice", "debug").toTypedArray(), envp.toTypedArray(), ipfsFolder).waitFor()
+                        if (exitcode != 0)
+                            Log.w("IPFSService", "Unable to set log level for blockservice")
+
                     }
 
                 }
@@ -315,6 +337,11 @@ class BackgroundService : Service() {
                 val amt = ipfsProcess?.errorStream?.read(buffer) ?: -1
                 if (amt < 0) break
                 System.err.write(buffer, 0, amt)
+
+                // Check if a block was fetched, indicating the node is in use
+                if (getBlockMatcher.add(buffer, 0, amt))
+                    lastActivity = System.currentTimeMillis()
+
             }
         }
 
@@ -364,9 +391,28 @@ class BackgroundService : Service() {
             ipfsUpSpeed = info?.RateOut?.toLong() ?: 0
             ipfsTotalTransferred = (info?.TotalIn?.toLong() ?: 0) + (info?.TotalOut?.toLong() ?: 0)
 
-            // We assume the node is actively in use if the incoming data is more than 5KB per second... There's probably a better way of doing this...
-            if (ipfsDownSpeed > 1024 * 5)
-                lastActivity = System.currentTimeMillis()
+//            // Run netstat to see how many connections to our IPFS daemon exist
+//            val process = Runtime.getRuntime().exec(listOf("/bin/sh", "-c", "netstat -a -n -W -t | egrep \"127.0.0.1:(5001^|8080)[ ]+ESTABLISHED\"").toTypedArray())
+//
+//            // Read all output
+//            val out = ByteArrayOutputStream()
+//            val buffer = ByteArray(1024*8)
+//            while (process.isAlive) {
+//                val amt = process.errorStream?.read(buffer) ?: -1
+//                if (amt < 0) break
+//                out.write(buffer, 0, amt)
+//                if (out.size() > 1024 * 128) break
+//            }
+//
+//            // Convert output to string
+//            val processTxt = String(out.toByteArray(), Charset.forName("UTF-8"))
+//            Log.i("IPFSService", processTxt)
+//            val lines = processTxt.split("\n").map { it.trim() }.filter { it.startsWith("tcp") }
+//
+//            // Each line now represents an open connection. Minus one for our LocalIPFS connection.
+//            ipfsNumConnections = max(0, lines.size - 1)
+//            if (ipfsNumConnections > 0)
+//                lastActivity = System.currentTimeMillis()
 
             // Update notification
             promiseOnUi {

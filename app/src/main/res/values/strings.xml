@@ -3,13 +3,14 @@
 
     <!-- Text for the notification -->
     <string name="notification_action_shutdown">Shutdown</string>
-    <string name="notification_action_details">Details</string>
+    <string name="notification_action_details">Dashboard</string>
     <string name="notification_offline_title">Offline</string>
     <string name="notification_offline_text">The IPFS node is not running.</string>
     <string name="notification_starting_title">Starting...</string>
     <string name="notification_starting_text">The IPFS node is starting up...</string>
     <string name="notification_running_title">Active • %total_speed</string>
     <string name="notification_running_text">The IPFS node is in use.</string>
+<!--    <string name="notification_running_text">The IPFS node is in use. Number of connections: %connections</string>-->
     <string name="notification_idle_title">Idle • %total_speed</string>
     <string name="notification_idle_text">The IPFS node is idle.</string>
     <string name="notification_unused_title">Closing soon • %total_speed</string>

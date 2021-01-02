@@ -23,6 +23,59 @@
             </intent-filter>
         </activity>
 
+        <!-- Activity for opening URLs -->
+        <activity android:name=".OpenURLActivity">
+
+            <!-- Handle ipfs://* links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="*" android:scheme="ipfs"/>
+            </intent-filter>
+
+            <!-- Handle ipns://* links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="*" android:scheme="ipns"/>
+            </intent-filter>
+
+            <!-- Handle http://ipfs.io/ipns/* links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:pathPattern="/ip[fn]s/.*" android:host="ipfs.io" android:scheme="http" />
+            </intent-filter>
+
+            <!-- Handle https://ipfs.io/ipns/* links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:pathPattern="/ip[fn]s/.*" android:host="ipfs.io" android:scheme="https" />
+            </intent-filter>
+
+            <!-- Handle http://localhost/ipns/* links -->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.VIEW"/>-->
+<!--                <category android:name="android.intent.category.DEFAULT"/>-->
+<!--                <category android:name="android.intent.category.BROWSABLE"/>-->
+<!--                <data android:pathPattern="/ip[fn]s/.*" android:host="localhost" android:scheme="http" android:port="8080" />-->
+<!--            </intent-filter>-->
+
+<!--            &lt;!&ndash; Handle http://127.0.0.1/ipns/* links &ndash;&gt;-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.VIEW"/>-->
+<!--                <category android:name="android.intent.category.DEFAULT"/>-->
+<!--                <category android:name="android.intent.category.BROWSABLE"/>-->
+<!--                <data android:pathPattern="/ip[fn]s/.*" android:host="127.0.0.1" android:scheme="http" android:port="8080" />-->
+<!--            </intent-filter>-->
+
+        </activity>
+
         <!-- IPFS service -->
         <service android:name=".BackgroundService" />
 

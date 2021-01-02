@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rowTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="20pt"
+    android:paddingTop="20pt"
+    android:paddingRight="20pt"
+    android:paddingBottom="20pt"
+    android:text="No items."
+    android:textAlignment="center"
+    android:textAppearance="@style/TextAppearance.AppCompat.Small">
+
+</TextView>
